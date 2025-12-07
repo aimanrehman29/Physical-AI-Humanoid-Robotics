@@ -1,55 +1,43 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Physical AI & Humanoid Robotics — RAG Chatbot Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### P1. Scope-bound answers
+Answer strictly from the textbook corpus (chapters and content-ops). If out of scope or low confidence, say “not covered” and point to relevant chapters.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### P2. Retrieval-first with citations
+Always retrieve before generating; every answer must cite chunks (chapter + section/anchor). No free-form hallucinations.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### P3. Safety and hygiene
+Sanitize inputs for prompt injection; refuse unsafe/off-topic requests. Apply output filters to avoid PII leakage, abuse, or ungrounded execution advice.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### P4. Observability and feedback
+Log queries, retrieved chunk IDs, latency, refusals, and feedback. Use feedback to refine chunking, prompts, and filters.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### P5. Performance and cost
+Prefer small, fast embeddings (e.g., MiniLM/bge-small) and stream responses. Keep latency and cost low.
 
-### [PRINCIPLE_6_NAME]
+### P6. Maintainability
+Keep components swappable: FastAPI backend, Qdrant for vectors, Neon Postgres for metadata/feedback. All config via env vars; no hardcoded secrets.
 
+## Architecture & Constraints
 
-[PRINCIPLE__DESCRIPTION]
+- Frontend: Docusaurus chat widget that streams answers, shows citations, and links to chapter anchors.
+- Backend: FastAPI with `/chat` (RAG), `/feedback`, `/ingest` (batch). Stateless by default; optional short-lived session context.
+- Retrieval: Qdrant vector store with chunk metadata (chapter, path, heading, anchor). Chapter-aware filters when mentioned.
+- Metadata/Logs: Neon serverless Postgres for feedback, usage logs, and run metadata.
+- Models: Small embeddings; LLM chosen by env (e.g., GPT-4o-mini, Claude Haiku/Sonnet). Prompts enforce scope and citation.
+- Safety: Input sanitization, prompt-injection checks, output guardrails. Refuse or deflect when outside corpus or unsafe.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Workflow & Quality Gates
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Ingestion: Parse MD/MDX, chunk with overlap, embed, upsert to Qdrant; tag with content hash/version.
+- Testing: Smoke retrieval, citation presence, refusal on out-of-scope queries, and latency budget.
+- Deployment: Set env (`QDRANT_URL/KEY`, `POSTGRES_URL`, `EMBED_MODEL`, `LLM_MODEL`), run build/tests, deploy API; Docusaurus points to the API URL.
+- Monitoring: Track p95 latency, errors/refusals, feedback scores; alert on missing citations or elevated errors.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution governs the RAG chatbot integration. Changes to scope, safety policy, or architecture require an explicit amendment and review. Releases must honor these principles; ungrounded answers, missing citations, or unsafe outputs are blockers.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-12-07 | **Last Amended**: 2025-12-07
