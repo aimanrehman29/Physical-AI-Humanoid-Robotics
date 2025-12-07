@@ -1,0 +1,86 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(31, 75, 255, 0.15), transparent 35%),
+    radial-gradient(circle at 80% 10%, rgba(76, 113, 255, 0.2), transparent 30%),
+    linear-gradient(135deg, #0f172a 0%, #111827 30%, #0b1020 100%);
+  color: #e5e7eb;
+}
+
+.heroBanner::before,
+.heroBanner::after {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(76, 113, 255, 0.35), transparent 55%);
+  filter: blur(40px);
+  opacity: 0.6;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+
+.heroBanner::before {
+  top: -40px;
+  left: -60px;
+}
+
+.heroBanner::after {
+  bottom: -60px;
+  right: -40px;
+}
+
+.scanLines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.06) 0px,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 1px,
+    transparent 6px
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.4;
+  animation: pulse 5s ease-in-out infinite;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(10px, -10px, 0) scale(1.05);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

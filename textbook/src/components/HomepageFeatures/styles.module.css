@@ -1,0 +1,41 @@
+.features {
+  display: flex;
+  align-items: center;
+  padding: 3rem 0;
+  width: 100%;
+}
+
+.featureCard {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-radius: 16px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  border-color: rgba(31, 75, 255, 0.4);
+}
+
+.featureCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(31, 75, 255, 0.18), transparent 50%, rgba(115, 143, 255, 0.12));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.featureCard:hover::after {
+  opacity: 1;
+}
+
+.featureSvg {
+  height: 180px;
+  width: 180px;
+  margin-bottom: 0.5rem;
+}
