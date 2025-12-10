@@ -2,18 +2,20 @@
   position: fixed;
   right: 1.5rem;
   bottom: 1.5rem;
-  z-index: 50;
-  background: linear-gradient(135deg, var(--ifm-color-primary), #3a62ff);
+  z-index: 2147480000;
+  pointer-events: auto;
+  background: linear-gradient(135deg, #1f4bff, #1fd1f9);
   color: #fff;
   border: none;
   border-radius: 999px;
-  padding: 0.7rem 1.05rem;
+  padding: 0.8rem 1.15rem;
   font-weight: 600;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
 .chatLauncher:hover {
@@ -27,16 +29,20 @@
   bottom: 4.5rem;
   width: min(360px, 92vw);
   max-height: 70vh;
-  background: linear-gradient(180deg, #0b1020, #0a101f 60%, #0c1324);
+  background: radial-gradient(circle at 20% 10%, rgba(31, 75, 255, 0.1), transparent 35%),
+    radial-gradient(circle at 80% 20%, rgba(31, 209, 249, 0.08), transparent 40%),
+    linear-gradient(180deg, #050915 0%, #0b1024 65%, #0c1228 100%);
   color: #e7ecf5;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: 18px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 60;
+  z-index: 2147480001;
   backdrop-filter: blur(8px);
+  pointer-events: auto;
+  animation: popIn 160ms ease;
 }
 
 .chatHeader {
@@ -65,7 +71,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: radial-gradient(circle at 20% 10%, rgba(79, 113, 255, 0.08), transparent 40%);
+  background: radial-gradient(circle at 20% 10%, rgba(79, 113, 255, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(31, 209, 249, 0.06), transparent 45%);
 }
 
 .bubble {
@@ -76,6 +83,23 @@
   font-size: 0.9rem;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.citations {
+  margin-top: 0.35rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.citations a {
+  color: var(--ifm-color-primary);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.citations a:hover {
+  text-decoration: underline;
 }
 
 .fromUser {
@@ -136,6 +160,12 @@
   cursor: not-allowed;
 }
 
+.error {
+  color: #ff9c9c;
+  font-size: 0.85rem;
+  padding: 0 0.85rem 0.35rem;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -153,9 +183,35 @@
   cursor: pointer;
 }
 
+.chip:before {
+  content: '⌁';
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
 .chip:hover {
   border-color: rgba(79, 113, 255, 0.6);
   color: #fff;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  color: #9fb2d9;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1fd1f9;
+  box-shadow: 0 0 10px rgba(31, 209, 249, 0.7);
+  animation: pulseGlow 2s ease-in-out infinite;
 }
 
 @media screen and (max-width: 768px) {
@@ -167,5 +223,31 @@
     right: 0.75rem;
     left: 0.75rem;
     width: auto;
+  }
+}
+
+@keyframes popIn {
+  from {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(0.9);
   }
 }

@@ -15,6 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
+from app.rag import answer_with_retrieval
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -22,13 +24,22 @@ logging.basicConfig(level=logging.INFO)
 class Settings(BaseSettings):
     qdrant_url: str = Field(..., env="QDRANT_URL")
     qdrant_api_key: Optional[str] = Field(None, env="QDRANT_API_KEY")
-    postgres_url: str = Field(..., env="POSTGRES_URL")  # Neon
-    embed_model: str = Field("all-MiniLM-L6-v2", env="EMBED_MODEL")
-    llm_model: str = Field("gpt-4o-mini", env="LLM_MODEL")
-    allowed_origins: List[str] = Field(default_factory=lambda: ["*"], env="ALLOWED_ORIGINS")
+    collection_name: str = Field("humanoid_ai_book", env="COLLECTION_NAME")
+    cohere_api_key: Optional[str] = Field(None, env="COHERE_API_KEY")
+    embed_model: str = Field("embed-english-v3.0", env="EMBED_MODEL")
+    max_chars: int = Field(1200, env="MAX_CHARS")
+    llm_model: Optional[str] = Field(None, env="LLM_MODEL")  # not used yet
+    allowed_origins_raw: Optional[str] = Field(None, env="ALLOWED_ORIGINS")
+
+    @property
+    def allowed_origins(self) -> List[str]:
+        if not self.allowed_origins_raw:
+            return ["*"]
+        return [o.strip() for o in self.allowed_origins_raw.split(",") if o.strip()]
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()
@@ -65,7 +76,7 @@ class FeedbackRequest(BaseModel):
     question: str
     answer: str
     chunk_ids: List[str] = []
-    sentiment: str = Field(..., regex="^(up|down)$")
+    sentiment: str = Field(..., pattern="^(up|down)$")
     session_id: Optional[str] = None
 
 
@@ -78,11 +89,13 @@ def health() -> dict[str, Any]:
 def chat(req: ChatRequest) -> ChatResponse:
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="Question is required")
-    # Placeholder: integrate retrieval + LLM. For now, refuse gracefully.
+    result = answer_with_retrieval(req.question)
     return ChatResponse(
-        answer="This chatbot answers from the textbook content. The backend RAG pipeline is not wired yet.",
-        citations=[],
-        refused=True,
+        answer=result.get("answer", ""),
+        citations=[
+          Citation(chapter="", anchor="", url=c.get("url", "")) for c in result.get("citations", [])
+        ],
+        refused=bool(result.get("refused", False)),
     )
 
 

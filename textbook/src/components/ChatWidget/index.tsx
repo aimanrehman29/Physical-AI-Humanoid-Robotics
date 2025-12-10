@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import clsx from 'clsx';
 import styles from './chat-widget.module.css';
 
@@ -6,6 +6,7 @@ type Message = {
   id: number;
   from: 'user' | 'bot';
   text: string;
+  citations?: {url: string; label: string}[];
 };
 
 const presetPrompts = [
@@ -15,56 +16,77 @@ const presetPrompts = [
   'What is the VLA loop?',
 ];
 
-const mockAnswers: Record<string, string> = {
-  'what is physical ai?':
-    'Physical AI blends sensing, perception, planning, and control so a robot can safely act in the real world. It follows a sense → think → act loop with safety anchors like E-stop and force/speed limits.',
-  'explain ros 2 topics vs services.':
-    'In ROS 2, topics are pub/sub streams (e.g., /camera) while services are request/response calls (e.g., /reset_pose). Nodes publish or subscribe to topics and call or serve services.',
-  'how do i simulate a robot in gazebo?':
-    'Install gazebo_ros packages, launch Gazebo, and spawn your model via /spawn_entity using an SDF/URDF. Use ROS 2 bridge to publish simulated sensors and test trajectories before hardware.',
-  'what is the vla loop?':
-    'Vision-Language-Action: see (detect/caption), understand (intent schema), decide (plan), and act (controller). Always confirm targets and enforce force/speed limits.',
-};
-
-const defaultMockAnswer =
-  'This is a UI mock. The chatbot will answer from the textbook when the backend is connected.';
+const API_BASE =
+  (typeof process !== 'undefined' ? process.env?.CHAT_API_URL : undefined) ?? 'http://127.0.0.1:8000';
 
 export default function ChatWidget(): React.ReactNode {
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: 1,
       from: 'bot',
-      text: 'Hi! I will answer strictly from the Physical AI & Humanoid Robotics textbook. Backend hookup coming soon.',
+      text: 'Hi! I answer strictly from the textbook. Ask a question to query the RAG backend.',
     },
   ]);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const addMessage = (msg: Message) => setMessages((prev) => [...prev, msg]);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
+    setHasInteracted(true);
     const userMsg: Message = {id: Date.now(), from: 'user', text: trimmed};
     addMessage(userMsg);
     setInput('');
     setBusy(true);
-    // Mock bot reply based on simple matching
-    setTimeout(() => {
-      const key = trimmed.toLowerCase();
+    setError(null);
+
+    try {
+      const resp = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: trimmed}),
+      });
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+      const answerText = data.answer || 'No answer returned.';
+      const citations =
+        (data.citations || []).map((c: any, idx: number) => ({
+          url: c.url || '#',
+          label: c.url ? `Source ${idx + 1}` : '',
+        })) || [];
       addMessage({
         id: Date.now() + 1,
         from: 'bot',
-        text: mockAnswers[key] ?? defaultMockAnswer,
+        text: answerText,
+        citations,
       });
+    } catch (err: any) {
+      setError('Backend not reachable or returned an error.');
+      addMessage({
+        id: Date.now() + 2,
+        from: 'bot',
+        text: 'I could not reach the backend right now.',
+      });
+    } finally {
       setBusy(false);
-    }, 400);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    send(input);
+    void send(input);
   };
 
   const history = useMemo(
@@ -73,11 +95,22 @@ export default function ChatWidget(): React.ReactNode {
         <div
           key={m.id}
           className={clsx(styles.bubble, m.from === 'user' ? styles.fromUser : styles.fromBot)}>
-          {m.text}
+          <div>{m.text}</div>
+          {m.citations && m.citations.length > 0 && (
+            <div className={styles.citations}>
+              {m.citations.map((c, idx) => (
+                <a key={idx} href={c.url} target="_blank" rel="noreferrer">
+                  {c.label || `Source ${idx + 1}`}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       )),
     [messages],
   );
+
+  if (!mounted) return null;
 
   return (
     <>
@@ -86,30 +119,42 @@ export default function ChatWidget(): React.ReactNode {
         className={styles.chatLauncher}
         aria-label="Open chat"
         onClick={() => setOpen((v) => !v)}>
-        💬 Chat
+        <span role="img" aria-hidden="true">🤖</span>
+        Chat
       </button>
       {open && (
         <div className={styles.chatPanel}>
           <div className={styles.chatHeader}>
             <div>
-              <div className={styles.chatTitle}>Textbook Chat (mock)</div>
-              <div className={styles.chatSubtitle}>Grounded answers; backend coming soon</div>
+              <div className={styles.chatTitle}>Textbook Chat</div>
+              <div className={styles.chatSubtitle}>Grounded answers from the local RAG backend</div>
             </div>
             <button
               type="button"
               aria-label="Close chat"
               className={styles.closeButton}
               onClick={() => setOpen(false)}>
-              ✕
+              ×
             </button>
           </div>
-          <div className={styles.chips}>
-            {presetPrompts.map((p) => (
-              <button key={p} className={styles.chip} type="button" onClick={() => send(p)}>
-                {p}
-              </button>
-            ))}
+          <div className={styles.statusBar}>
+            <span className={styles.statusDot} />
+            <span>RAG chatbot · uses textbook embeddings</span>
           </div>
+          {!input.trim() && !hasInteracted && (
+            <div className={styles.chips}>
+              {presetPrompts.map((p) => (
+                <button
+                  key={p}
+                  className={styles.chip}
+                  type="button"
+                  onClick={() => send(p)}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && <div className={styles.error}>{error}</div>}
           <div className={styles.chatMessages}>{history}</div>
           <form className={styles.chatInputRow} onSubmit={handleSubmit}>
             <input

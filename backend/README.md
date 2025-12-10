@@ -1,6 +1,6 @@
 # Backend (FastAPI) — Physical AI RAG Chatbot
 
-This is a starter backend for the RAG chatbot. It wires FastAPI, config/env handling, and placeholder endpoints. Retrieval, embeddings, Qdrant, Neon, and LLM calls still need to be implemented.
+Starter backend for the textbook RAG chatbot using Qdrant + Cohere embeddings (LLM hookup pending).
 
 ## Setup
 ```bash
@@ -13,20 +13,21 @@ uvicorn app.main:app --reload
 ## Env vars (example)
 ```
 QDRANT_URL=https://your-qdrant:6333
-QDRANT_API_KEY=...
-POSTGRES_URL=postgresql+psycopg://user:pass@neon-host/db
-EMBED_MODEL=all-MiniLM-L6-v2
-LLM_MODEL=gpt-4o-mini
+QDRANT_API_KEY=
+COLLECTION_NAME=humanoid_ai_book
+COHERE_API_KEY=
+EMBED_MODEL=embed-english-v3.0
+LLM_MODEL=           # optional, not used yet
 ALLOWED_ORIGINS=*
 ```
 
-## Endpoints (placeholders)
+## Endpoints (placeholder)
 - `GET /health` — health check.
-- `POST /chat` — accepts `{question, session_id?}`; returns a placeholder answer (wire RAG here).
-- `POST /feedback` — accepts `{question, answer, chunk_ids, sentiment, session_id?}`; logs feedback (wire Postgres insert here).
+- `POST /chat` — accepts `{question, session_id?}`; retrieval-backed placeholder (Cohere embed + Qdrant). Swap in real LLM call once keys are set.
+- `POST /feedback` — accepts `{question, answer, chunk_ids, sentiment, session_id?}`; logs feedback (to be wired later).
 
 ## TODO
-- Add ingestion script: parse MD/MDX, chunk, embed, upsert to Qdrant with metadata.
-- Add retrieval + LLM pipeline in `/chat` (sanitize, embed, retrieve, prompt, stream).
-- Add Postgres storage for feedback and ingestion runs.
-- Add streaming responses and proper error handling.
+- Ingestion script: fetch sitemap/MDX, chunk, embed, upsert to Qdrant with metadata.
+- Retrieval + LLM pipeline in `/chat` (sanitize, embed, retrieve, prompt, stream).
+- Optional storage for feedback and ingestion runs.
+- Streaming responses and better error handling.

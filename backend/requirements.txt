@@ -4,3 +4,7 @@ qdrant-client==1.11.0
 psycopg[binary]==3.2.1
 pydantic==2.9.1
 pydantic-settings==2.6.0
+requests==2.32.3
+trafilatura==1.8.1
+python-dotenv==1.2.1
+cohere==5.13.5

@@ -13,7 +13,7 @@ const config: Config = {
     v4: true,
   },
 
-  url: 'https://ai-driven-dev.example.com',
+  url: 'https://physical-ai-humanoid-roboticsbook-opal.vercel.app',
   baseUrl: '/',
 
   organizationName: 'ai-driven-dev',
