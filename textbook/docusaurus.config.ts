@@ -76,6 +76,16 @@ const config: Config = {
           label: 'Content Ops',
         },
         {
+          label: 'Sign up',
+          to: '/signup',
+          position: 'right',
+        },
+        {
+          label: 'Sign in',
+          to: '/signin',
+          position: 'right',
+        },
+        {
           href: 'https://github.com/aimanrehman29',
           label: 'GitHub',
           position: 'right',

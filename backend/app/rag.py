@@ -1,10 +1,9 @@
 import logging
 import os
-import logging
-import os
 from typing import List, Optional, Sequence
 
 import cohere
+from openai import OpenAI
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from dotenv import load_dotenv
@@ -28,6 +27,13 @@ def get_cohere_client() -> Optional[cohere.Client]:
     return cohere.Client(api_key)
 
 
+def get_openai_client() -> Optional[OpenAI]:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
+
+
 def get_qdrant_client() -> Optional[QdrantClient]:
     url = os.getenv("QDRANT_URL")
     if not url:
@@ -36,11 +42,23 @@ def get_qdrant_client() -> Optional[QdrantClient]:
 
 
 def embed_text(text: str) -> Optional[List[float]]:
-    client = get_cohere_client()
-    if client is None:
-        logger.warning("COHERE_API_KEY not set; cannot embed text.")
+    # Prefer OpenAI embeddings if available; fallback to Cohere
+    oa_client = get_openai_client()
+    if oa_client:
+        try:
+            resp = oa_client.embeddings.create(
+                model=os.getenv("EMBED_MODEL", "text-embedding-3-small"),
+                input=text,
+            )
+            return resp.data[0].embedding
+        except Exception as exc:
+            logger.warning("OpenAI embed failed, falling back to Cohere: %s", exc)
+
+    co_client = get_cohere_client()
+    if co_client is None:
+        logger.warning("No embedding provider configured.")
         return None
-    resp = client.embed(
+    resp = co_client.embed(
         model=os.getenv("EMBED_MODEL", "embed-english-v3.0"),
         input_type="search_query",
         texts=[text],
@@ -48,7 +66,7 @@ def embed_text(text: str) -> Optional[List[float]]:
     return resp.embeddings[0]
 
 
-def retrieve(query: str, top_k: int = 5) -> Sequence[RetrievalResult]:
+def retrieve(query: str, top_k: int = 5, selected_text: Optional[str] = None) -> Sequence[RetrievalResult]:
     vec = embed_text(query)
     if vec is None:
         return []
@@ -59,6 +77,15 @@ def retrieve(query: str, top_k: int = 5) -> Sequence[RetrievalResult]:
     collection = os.getenv("COLLECTION_NAME", "humanoid_ai_book")
     res = qdrant.query_points(collection_name=collection, query=vec, limit=top_k)
     out: List[RetrievalResult] = []
+    if selected_text:
+        # Treat the user-selected text as a high-priority pseudo-result
+        out.append(
+            RetrievalResult(
+                text=selected_text,
+                url="user-selection",
+                score=1.0,
+            )
+        )
     for point in res.points:
         payload = point.payload or {}
         out.append(
@@ -71,8 +98,8 @@ def retrieve(query: str, top_k: int = 5) -> Sequence[RetrievalResult]:
     return out
 
 
-def answer_with_retrieval(question: str) -> dict:
-    hits = retrieve(question, top_k=5)
+def answer_with_retrieval(question: str, selected_text: Optional[str] = None) -> dict:
+    hits = retrieve(question, top_k=5, selected_text=selected_text)
     if not hits:
         return {
             "answer": "RAG backend is not fully configured (missing Qdrant and/or Cohere).",
@@ -92,35 +119,48 @@ def answer_with_retrieval(question: str) -> dict:
         f"Context:\n{context_block}"
     )
 
-    llm_api_key = os.getenv("LLM_MODEL")  # user stores the Gemini key here
-    gemini_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     answer_text: Optional[str] = None
 
-    if llm_api_key:
+    # Prefer OpenAI if available
+    oa_client = get_openai_client()
+    if oa_client:
         try:
-            endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
-            resp = requests.post(
-                endpoint,
-                params={"key": llm_api_key},
-                json={
-                    "contents": [
-                        {
-                            "parts": [{"text": prompt}]
-                        }
-                    ]
-                },
-                timeout=20,
+            model_name = os.getenv("LLM_MODEL", "gpt-4o-mini")
+            resp = oa_client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "Answer only from the provided context. If not found, say 'I don't know'."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
             )
-            resp.raise_for_status()
-            data = resp.json()
-            answer_text = (
-                data.get("candidates", [{}])[0]
-                .get("content", {})
-                .get("parts", [{}])[0]
-                .get("text")
-            )
-        except Exception as exc:  # pragma: no cover - best effort logging
-            logger.warning("Gemini call failed, falling back to stitched answer: %s", exc, exc_info=True)
+            answer_text = resp.choices[0].message.content
+        except Exception as exc:
+            logger.warning("OpenAI call failed, falling back to Gemini/stitched: %s", exc, exc_info=True)
+
+    # Gemini fallback (legacy LLM_MODEL holds Gemini key)
+    if not answer_text:
+        llm_api_key = os.getenv("LLM_MODEL")
+        gemini_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        if llm_api_key:
+            try:
+                endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
+                resp = requests.post(
+                    endpoint,
+                    params={"key": llm_api_key},
+                    json={"contents": [{"parts": [{"text": prompt}]}]},
+                    timeout=20,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                answer_text = (
+                    data.get("candidates", [{}])[0]
+                    .get("content", {})
+                    .get("parts", [{}])[0]
+                    .get("text")
+                )
+            except Exception as exc:  # pragma: no cover - best effort logging
+                logger.warning("Gemini call failed, falling back to stitched answer: %s", exc, exc_info=True)
 
     if not answer_text:
         answer_text = "Here is a stitched answer from retrieved content:\n" + "\n---\n".join(snippets)
