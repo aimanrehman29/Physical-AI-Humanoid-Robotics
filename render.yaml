@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: physical-ai-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    autoDeploy: true
+    envVars:
+      # Set these in the Render dashboard with your real secrets/values.
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: COHERE_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: COLLECTION_NAME
+        sync: false
+      - key: SITEMAP_URL
+        sync: false
+      - key: EMBED_MODEL
+        sync: false
+      - key: MAX_CHARS
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
