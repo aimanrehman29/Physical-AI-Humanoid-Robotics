@@ -1,10 +1,7 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Global styles and theme overrides.
  */
 
-/* You can override the default Infima variables here. */
 :root {
   --ifm-color-primary: #1f4bff;
   --ifm-color-primary-dark: #1c43e6;
@@ -49,6 +46,24 @@ body {
   --ifm-footer-background-color: #f0f3ff;
   --ifm-color-content: #0f172a;
   --docusaurus-highlighted-code-line-bg: rgba(31, 75, 255, 0.08);
+}
+
+/* Urdu locale RTL helpers */
+[data-theme][lang='ur'] body,
+.ur-body {
+  direction: rtl;
+  font-family: 'Noto Naskh Arabic', 'Scheherazade New', 'Jameel Noori Nastaleeq', serif;
+  text-align: right;
+}
+
+[data-theme][lang='ur'] pre,
+[data-theme][lang='ur'] code,
+[data-theme][lang='ur'] .theme-code-block,
+.ur-body pre,
+.ur-body code,
+.ur-body .theme-code-block {
+  direction: ltr;
+  text-align: left;
 }
 
 .main-wrapper,

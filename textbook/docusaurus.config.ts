@@ -23,7 +23,13 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ur'],
+    localeConfigs: {
+      ur: {
+        label: 'اردو',
+        direction: 'rtl',
+      },
+    },
   },
 
   presets: [
@@ -56,6 +62,7 @@ const config: Config = {
         src: 'img/logo1.png',
       },
       items: [
+        {type: 'localeDropdown', position: 'right'},
         {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',

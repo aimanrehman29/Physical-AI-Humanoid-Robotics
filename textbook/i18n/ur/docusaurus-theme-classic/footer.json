@@ -1,0 +1,23 @@
+{
+  "link.title.Docs": {
+    "message": "دستاویزات"
+  },
+  "link.item.label.Overview": {
+    "message": "جائزہ"
+  },
+  "link.title.Content": {
+    "message": "مواد"
+  },
+  "link.item.label.Chapters": {
+    "message": "ابواب"
+  },
+  "link.title.More": {
+    "message": "مزید"
+  },
+  "link.item.label.GitHub": {
+    "message": "گیٹ ہب"
+  },
+  "footer.copyright": {
+    "message": "جملہ حقوق محفوظ"
+  }
+}
