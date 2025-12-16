@@ -43,7 +43,8 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-app = FastAPI(title="Physical AI RAG Chatbot", version="0.2.0")
+root_path = os.getenv("FASTAPI_ROOT_PATH", "")
+app = FastAPI(title="Physical AI RAG Chatbot", version="0.2.0", root_path=root_path)
 
 app.add_middleware(
     CORSMiddleware,
