@@ -1,16 +1,9 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "pythonVersion": "3.11",
-        "excludeFiles": "{textbook/**,backend/.venv/**,node_modules/**,textbook/node_modules/**,textbook/build/**,history/**,video/**,.git/**}"
-      }
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.11",
+      "excludeFiles": "{textbook/**,backend/.venv/**,node_modules/**,textbook/node_modules/**,textbook/build/**,history/**,video/**,.git/**}"
     }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/main.py" }
-  ]
+  }
 }
