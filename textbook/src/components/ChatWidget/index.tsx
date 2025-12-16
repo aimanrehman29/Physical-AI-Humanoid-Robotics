@@ -119,8 +119,8 @@ export default function ChatWidget(): React.ReactNode {
         className={styles.chatLauncher}
         aria-label="Open chat"
         onClick={() => setOpen((v) => !v)}>
-        <span role="img" aria-hidden="true">🤖</span>
-        Chat
+        <span role="img" aria-hidden="true">💬</span>
+        
       </button>
       {open && (
         <div className={styles.chatPanel}>
@@ -173,3 +173,4 @@ export default function ChatWidget(): React.ReactNode {
     </>
   );
 }
+
